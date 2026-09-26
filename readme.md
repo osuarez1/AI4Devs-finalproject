@@ -392,6 +392,7 @@ AI4Devs-finalproject/
 ├── readme.md                       # Documentación del proyecto (entregable)
 ├── prompts.md                      # Prompts utilizados (entregable)
 ├── docs/                           # Material extendido: ADR, diagramas y especificación OpenAPI (api/openapi.yaml)
+├── openspec/                       # Cambios (propuesta, especificación, diseño, tareas) y especificaciones vivas
 ├── apps/
 │   └── platform/                   # Aplicación Rails 8 (monolito modular)
 │       ├── app/
@@ -1049,17 +1050,17 @@ Respuesta `422 Unprocessable Entity` al conectar un sitio con datos no válidos:
 
 **Backlog del MVP.**
 
-| ID | Historia (resumen) | Rol | Prioridad | Estimación |
-|---|---|---|---|---|
-| HU-01 | Conectar uno o varios sitios WordPress | Admin | Must | 5 |
-| HU-02 | Aprender el estilo de cada sitio a partir de sus últimos 50 posts | Admin | Must | 8 |
-| HU-03 | Proponer temas de actualidad y decidir cuáles se redactan | Editor | Must | 8 |
-| HU-04 | Generar un borrador con el tono del sitio y editarlo | Editor | Must | 8 |
-| HU-05 | Publicar o programar en WordPress y ver la URL publicada | Editor | Must | 5 |
-| HU-06 | Autopilot por sitio con calendario y guardrails | Admin | Must | 13 |
-| HU-07 | Invitar miembros al workspace y asignarles un rol | Admin | Must | 5 |
-| HU-08 | Consultar el consumo y el coste de IA por sitio | Admin | Could | 3 |
-| HU-09 | Limitar a un editor a sitios concretos del workspace | Admin | Won't (MVP) | — |
+| ID | Historia (resumen) | Rol | Prioridad | Estimación | Cambios OpenSpec |
+|---|---|---|---|---|---|
+| HU-01 | Conectar uno o varios sitios WordPress | Admin | Must | 5 | [`add-wordpress-site-connection`](openspec/changes/add-wordpress-site-connection/proposal.md) |
+| HU-02 | Aprender el estilo de cada sitio a partir de sus últimos 50 posts | Admin | Must | 8 | [`add-content-ingestion`](openspec/changes/add-content-ingestion/proposal.md), [`add-style-profile`](openspec/changes/add-style-profile/proposal.md) |
+| HU-03 | Proponer temas de actualidad y decidir cuáles se redactan | Editor | Must | 8 | [`add-topic-research`](openspec/changes/add-topic-research/proposal.md), [`add-topic-decisions`](openspec/changes/add-topic-decisions/proposal.md) |
+| HU-04 | Generar un borrador con el tono del sitio y editarlo | Editor | Must | 8 | [`add-draft-generation`](openspec/changes/add-draft-generation/proposal.md), [`add-quality-gate`](openspec/changes/add-quality-gate/proposal.md), [`add-draft-editor`](openspec/changes/add-draft-editor/proposal.md) |
+| HU-05 | Publicar o programar en WordPress y ver la URL publicada | Editor | Must | 5 | [`add-post-publishing`](openspec/changes/add-post-publishing/proposal.md), [`add-publishing-schedules`](openspec/changes/add-publishing-schedules/proposal.md) |
+| HU-06 | Autopilot por sitio con calendario y guardrails | Admin | Must | 13 | [`add-autopilot-pipeline`](openspec/changes/add-autopilot-pipeline/proposal.md), [`add-autopilot-guardrails`](openspec/changes/add-autopilot-guardrails/proposal.md) |
+| HU-07 | Invitar miembros al workspace y asignarles un rol | Admin | Must | 5 | [`add-user-authentication`](openspec/changes/add-user-authentication/proposal.md), [`add-workspaces-and-roles`](openspec/changes/add-workspaces-and-roles/proposal.md), [`add-member-invitations`](openspec/changes/add-member-invitations/proposal.md) |
+| HU-08 | Consultar el consumo y el coste de IA por sitio | Admin | Could | 3 | — |
+| HU-09 | Limitar a un editor a sitios concretos del workspace | Admin | Won't (MVP) | — | — |
 
 A continuación se detallan las tres historias principales.
 
@@ -1246,248 +1247,104 @@ Notas:
 
 ## 6. Tickets de Trabajo
 
-**Definición de hecho (común a todos los tickets).**
+El trabajo del MVP se organiza como **cambios de OpenSpec** en [`openspec/changes/`](openspec/changes/). Cada cambio es una porción vertical de una capacidad (base de datos, backend, frontend y tests juntos) que se entrega en una sola PR de 1 a 3 días. Cada uno tiene su propuesta; la especificación, el diseño y las tareas se completan antes de implementarlo. Al archivar un cambio, su especificación pasa a `openspec/specs/<capacidad>/spec.md`.
 
-- El código está revisado mediante PR a `main`, con la CI en verde: lint, Brakeman, `bundler-audit` y tests.
-- Hay tests automatizados que cubren los criterios de aceptación.
-- Los textos visibles de la interfaz están en español.
-- Hay documentación actualizada (este `readme.md` u OpenAPI) si cambia un contrato.
-- Se ha desplegado y verificado en el entorno local con el WordPress de pruebas.
-- La tarjeta de Trello está enlazada: la rama `feature/<id-trello>-<slug>` y los commits la referencian.
+**Cambios del MVP**, en orden de implementación:
+
+| # | Cambio | Capacidad | Historias | Tamaño | Ola |
+|---|---|---|---|---|---|
+| 0 | [`bootstrap-platform`](openspec/changes/bootstrap-platform/proposal.md) | `developer-environment` | — | M | 1 |
+| 1 | [`add-user-authentication`](openspec/changes/add-user-authentication/proposal.md) | `user-authentication` | HU-07 | S | 1 |
+| 2 | [`add-workspaces-and-roles`](openspec/changes/add-workspaces-and-roles/proposal.md) | `workspace-access` | HU-07 | M | 1 |
+| 3 | [`add-wordpress-site-connection`](openspec/changes/add-wordpress-site-connection/proposal.md) | `site-connection` | HU-01 | M | 1 |
+| 4 | [`add-task-runs`](openspec/changes/add-task-runs/proposal.md) | `task-runs` | — | S | 1 |
+| 5 | [`add-content-ingestion`](openspec/changes/add-content-ingestion/proposal.md) | `content-ingestion` | HU-02 | M | 1 |
+| 6 | [`add-style-profile`](openspec/changes/add-style-profile/proposal.md) | `style-profile` | HU-02 | S | 1 |
+| 7 | [`add-topic-research`](openspec/changes/add-topic-research/proposal.md) | `topic-research` | HU-03 | M | 1 |
+| 8 | [`add-topic-decisions`](openspec/changes/add-topic-decisions/proposal.md) | `topic-research` | HU-03 | S | 1 |
+| 9 | [`add-draft-generation`](openspec/changes/add-draft-generation/proposal.md) | `draft-generation` | HU-04 | M | 1 |
+| 10 | [`add-quality-gate`](openspec/changes/add-quality-gate/proposal.md) | `quality-gate` | HU-04, HU-06 | S | 2 |
+| 11 | [`add-draft-editor`](openspec/changes/add-draft-editor/proposal.md) | `draft-review` | HU-04 | M | 2 |
+| 12 | [`add-post-publishing`](openspec/changes/add-post-publishing/proposal.md) | `publishing` | HU-05 | M | 2 |
+| 13 | [`add-publishing-schedules`](openspec/changes/add-publishing-schedules/proposal.md) | `publishing-calendar` | HU-05, HU-06 | S | 2 |
+| 14 | [`add-autopilot-pipeline`](openspec/changes/add-autopilot-pipeline/proposal.md) | `autopilot` | HU-06 | M | 2 |
+| 15 | [`add-autopilot-guardrails`](openspec/changes/add-autopilot-guardrails/proposal.md) | `autopilot` | HU-06 | S | 2 |
+| 16 | [`add-member-invitations`](openspec/changes/add-member-invitations/proposal.md) | `workspace-access` | HU-07 | S | 2 |
+| 17 | [`add-production-deployment`](openspec/changes/add-production-deployment/proposal.md) | `deployment` | — | M | 2 |
+
+La ola 1 (Entrega 2) cubre el flujo Copilot hasta el primer borrador; la ola 2 (Entrega 3) añade publicación, Autopilot, invitaciones y el despliegue en producción. `add-production-deployment` solo depende de `bootstrap-platform`, así que puede adelantarse si hace falta la URL pública antes.
+
+**Definición de hecho (común a todos los cambios).**
+
+- PR a `main` revisada, con la CI en verde (lint, Brakeman, `bundler-audit`, tests).
+- Tests automatizados que cubren los escenarios de la especificación del cambio.
+- Textos visibles de la interfaz en español.
+- Documentación actualizada si cambia un contrato (este `readme.md`, `docs/api/openapi.yaml`).
+- Verificado en local contra el WordPress de pruebas.
+- Tarjeta de Trello enlazada: rama `feature/<id-trello>-<cambio>`.
+
+A continuación, los tres tickets representativos que pide la plantilla (base de datos, backend y frontend). Cada uno resume la parte correspondiente de un cambio; el detalle completo está en el cambio enlazado.
 
 **Ticket 1**
 
-**DB-01 · Esquema inicial: multitenencia, sitios WordPress, contenido y vectores**
+**DB-01 · Esquema vectorial para la ingesta de contenido**
 
-| Tipo | Prioridad | Estimación | Historias | Depende de |
+| Tipo | Cambio | Historias | Estimación | Depende de |
 |---|---|---|---|---|
-| Base de datos | Must | 5 | HU-01 a HU-07 | Proyecto Rails 8 creado con PostgreSQL y el generador de autenticación |
+| Base de datos | [`add-content-ingestion`](openspec/changes/add-content-ingestion/proposal.md) | HU-02 | 3 | `add-wordpress-site-connection`, `add-task-runs` |
 
-**Objetivo.** Crear el esquema completo del MVP descrito en §3 en una única base de datos PostgreSQL con pgvector, con las restricciones de integridad en la propia base de datos y no solo en los modelos, más los modelos Active Record y los datos de ejemplo.
+**Objetivo.** Crear las tablas donde se guardan los posts ingeridos y sus fragmentos con embeddings, con las restricciones de integridad en la propia base de datos y un índice vectorial que permita buscar por similitud solo dentro de un sitio.
 
-**Alcance.**
+**Criterios de aceptación principales.**
 
-- *Incluye:*
-  - migraciones de todas las tablas de §3;
-  - índices, restricciones CHECK y claves foráneas con su comportamiento de borrado;
-  - la tabla de Solid Queue en la base de datos principal;
-  - modelos con asociaciones, enums y validaciones;
-  - semillas de desarrollo.
-- *No incluye:* la lógica de ingesta, de investigación o de Autopilot (otros tickets).
+- [ ] Migración que habilita la extensión `vector` (imagen `pgvector/pgvector:pg17`).
+- [ ] `source_posts` con UNIQUE (`site_id`, `wp_post_id`) y `content_hash` para no reprocesar posts sin cambios.
+- [ ] `document_chunks` con `embedding vector(1536)`, `embedding_model`, UNIQUE (`source_post_id`, `chunk_index`), índice sobre `site_id` e índice HNSW `vector_cosine_ops`.
+- [ ] Borrar un sitio elimina en cascada sus posts ingeridos y fragmentos.
+- [ ] Una búsqueda de vecinos filtrada por sitio usa el índice HNSW (comprobado con `EXPLAIN`) y solo devuelve fragmentos de ese sitio.
 
-**Tareas técnicas.**
-
-1. Migración `enable_extension "vector"`, que requiere la imagen `pgvector/pgvector:pg17` en `compose.yaml` y en el accesorio de Kamal.
-2. `workspaces`, `memberships` e `invitations`: UNIQUE (`workspace_id`, `user_id`) y UNIQUE parcial (`workspace_id`, `lower(email)`) WHERE `accepted_at IS NULL`. `users` y `sessions` vienen del generador de autenticación; se añade `users.name`.
-3. `sites`:
-   - `wp_app_password` de tipo `text`;
-   - `guardrails jsonb` con valores por defecto seguros;
-   - `seed_keywords string[]`;
-   - restricciones CHECK de `connection_status` y `autopilot_mode`;
-   - UNIQUE (`workspace_id`, `base_url`).
-4. `schedules`, con CHECK de coherencia entre `frequency` y `days_of_week`.
-5. `runs`, con UNIQUE parcial (`site_id`, `slot_at`) WHERE `kind = 'autopilot'` e índice (`site_id`, `kind`, `created_at`).
-6. `source_posts` (UNIQUE `site_id`, `wp_post_id`) y `document_chunks`:
-   - `embedding vector(1536)`;
-   - UNIQUE (`source_post_id`, `chunk_index`);
-   - índice HNSW con `vector_cosine_ops`.
-7. `style_profiles`, con `site_id` UNIQUE y `style_centroid vector(1536)`.
-8. `topics` y `posts`:
-   - CHECK de estados y rangos 0–1;
-   - `posts.topic_id` UNIQUE;
-   - UNIQUE parcial (`site_id`, `wp_post_id`);
-   - `lock_version`.
-9. Copiar el esquema de Solid Queue a una migración de la base de datos principal y quitar `connects_to` de la configuración (configuración de base de datos única).
-10. Modelos:
-    - asociaciones con `dependent:` coherente con las claves foráneas;
-    - `enum ..., validate: true`;
-    - `encrypts :wp_app_password`;
-    - `has_neighbors :embedding` (gema `neighbor`) en `DocumentChunk` y `Topic`;
-    - *scopes* por estado;
-    - validación de "al menos un admin por workspace".
-11. `db/seeds.rb`:
-    - workspace "Demo" con un admin y un editor;
-    - un sitio apuntando al WordPress local (URL `http` permitida solo en desarrollo);
-    - una franja semanal;
-    - varios temas;
-    - un borrador de ejemplo, para desarrollar la interfaz sin llamar a la IA.
-
-**Criterios de aceptación.**
-
-- [ ] `bin/rails db:prepare` crea el esquema desde cero sin errores y `db:rollback` revierte cada migración.
-- [ ] El esquema coincide con el diagrama de §3.1: tablas, tipos, claves, índices y restricciones.
-- [ ] Insertar datos que violan una restricción falla en la propia base de datos: `ActiveRecord::RecordNotUnique` para duplicados y `ActiveRecord::StatementInvalid` para CHECK.
-- [ ] Borrar un sitio elimina en cascada sus posts ingeridos, fragmentos, perfil, temas, posts, franjas y ejecuciones.
-- [ ] Borrar un usuario conserva sus decisiones históricas con la referencia a `NULL`.
-- [ ] `wp_app_password` se guarda cifrada: el valor en la base de datos no contiene la contraseña en claro.
-- [ ] Una consulta de vecinos más cercanos sobre `document_chunks` filtrada por `site_id` usa el índice HNSW (comprobado con `EXPLAIN`).
-- [ ] Las semillas cargan sin errores y permiten iniciar sesión con los usuarios de demostración.
-
-**Pruebas.**
-
-- Specs de modelo para validaciones y enums.
-- Specs de restricciones de base de datos, insertando con `insert_all` para saltarse las validaciones.
-- Spec de borrado en cascada.
-- Spec de búsqueda vectorial: los vecinos devueltos pertenecen solo al sitio consultado.
-- Spec de cifrado.
-
-**Notas.** 1536 es la dimensión de `text-embedding-3-small`; cambiar de modelo de embeddings exige una migración de dimensión y reindexar. Los parámetros HNSW empiezan con los valores por defecto de pgvector.
+**Pruebas.** Specs de restricciones (duplicados → `ActiveRecord::RecordNotUnique`), de borrado en cascada y de búsqueda vectorial filtrada por sitio.
 
 **Ticket 2**
 
 **BE-01 · Conexión y verificación de sitios WordPress**
 
-| Tipo | Prioridad | Estimación | Historias | Depende de |
+| Tipo | Cambio | Historias | Estimación | Depende de |
 |---|---|---|---|---|
-| Backend | Must | 5 | HU-01 | DB-01 |
+| Backend | [`add-wordpress-site-connection`](openspec/changes/add-wordpress-site-connection/proposal.md) | HU-01 | 5 | `add-workspaces-and-roles` |
 
-**Objetivo.** Permitir que un admin conecte uno o varios sitios WordPress a su workspace de forma segura: validar la URL frente a SSRF, verificar las credenciales y los permisos en WordPress, guardar la contraseña cifrada y lanzar la ingesta inicial.
+**Objetivo.** Permitir que un admin conecte uno o varios sitios WordPress de forma segura: validar la URL frente a SSRF, verificar credenciales y permisos, y guardar la Application Password cifrada.
 
-**Rutas.** Recursos anidados y superficiales (`shallow`), que responden Inertia o JSON:
+**Criterios de aceptación principales.**
 
-| Método y ruta | Acción | Rol |
-|---|---|---|
-| `GET /workspaces/:workspace_id/sites/new` | Asistente de conexión | admin |
-| `POST /workspaces/:workspace_id/sites` | Conectar sitio (ver §4) | admin |
-| `GET /sites/:id` | Panel del sitio | admin, editor |
-| `PATCH /sites/:id` | Editar nicho, idioma, zona horaria o credenciales (reverifica) | admin |
-| `DELETE /sites/:id` | Desconectar el sitio y borrar sus datos | admin |
-| `POST /sites/:id/verification` | Reverificar la conexión | admin |
-
-**Diseño.**
-
-1. `SitesController#create` → `authorize Site` (Pundit, `SitePolicy#create?` solo para admin) → `Sites::Connect.call(workspace:, params:, user:)`.
-2. `Sites::Connect` hace:
-   - normaliza la URL (esquema, host en minúsculas, sin barra final);
-   - `Wordpress::UrlGuard.check!(url)`: HTTPS obligatorio fuera de desarrollo; resolución DNS; bloqueo de rangos privados, loopback, link-local y metadatos, tanto IPv4 como IPv6; revalidación de redirecciones. Usa `ssrf_filter`;
-   - `Wordpress::Client#discover` → `GET {base}/wp-json/`: comprueba que exista el espacio de nombres `wp/v2` y que `authentication` anuncie `application-passwords`;
-   - `Wordpress::Client#current_user` → `GET {base}/wp-json/wp/v2/users/me?context=edit` con Basic auth. Obtiene `roles` y `capabilities`, exige `publish_posts` y genera un aviso si el rol es `administrator` o `editor`;
-   - en una transacción, crea el `Site` (`connection_status: connected`, `last_verified_at`) y un `Run` de tipo `ingestion`, y encola `Sites::IngestJob` tras el commit.
-3. Respuestas:
-   - Inertia: redirección al panel del sitio con un mensaje de éxito, o vuelta al asistente con los errores por campo;
-   - JSON: `201` con `Location`, o `422` con `errors`.
-4. `Wordpress::Client`: tiempos de espera de 5 s para conectar y 10 s para leer, `User-Agent` propio, sin seguir redirecciones no validadas, y errores tipados (`Wordpress::Unauthorized`, `NotFound`, `Timeout`, `RestDisabled`).
-
-**Tabla de errores.**
-
-| Situación | Detección | Error mostrado |
-|---|---|---|
-| URL no permitida | `UrlGuard` | `base_url`: "no está permitida (…motivo…)" |
-| No hay REST API | 404 o falta `wp/v2` en `/wp-json/` | `base_url`: "no se encuentra la REST API de WordPress" |
-| Application Passwords no disponibles | `authentication` no incluye `application-passwords` | `base`: "el sitio no admite Application Passwords (¿HTTPS activo?)" |
-| Credenciales rechazadas | 401 en `users/me` | `wp_app_password`: "WordPress ha rechazado las credenciales" + guía (cabecera `Authorization` bloqueada por el servidor) |
-| Sin permiso para publicar | falta `publish_posts` | `wp_username`: "este usuario no puede publicar entradas" |
-| Privilegios excesivos | rol `administrator` o `editor` | Aviso no bloqueante en `warnings` |
-| El sitio no responde | timeout o error de red | `base`: "el sitio no responde; inténtalo más tarde" |
-| Sitio repetido | UNIQUE (`workspace_id`, `base_url`) | `base_url`: "este sitio ya está conectado en el workspace" |
-
-**Seguridad.**
-
-- `wp_app_password` solo se lee dentro de `Wordpress::Client`; el serializador de `Site` no la incluye nunca.
-- `filter_parameters` la oculta en los logs.
-- `rate_limit` de 10 intentos de conexión por hora y usuario.
-
-**Criterios de aceptación.**
-
-- [ ] Un admin conecta un sitio válido; la respuesta es `201` y el sitio queda `connected` con una ingesta encolada.
-- [ ] Un admin puede conectar varios sitios en el mismo workspace; el mismo sitio en el mismo workspace se rechaza.
-- [ ] Todos los casos de la tabla de errores devuelven `422` con el mensaje indicado y no guardan nada.
-- [ ] Las URL que resuelven a direcciones privadas se rechazan **sin** que se haga ninguna petición a ellas.
-- [ ] Un editor recibe `403`; un usuario de otro workspace recibe `404`.
+- [ ] `POST /workspaces/{workspace_id}/sites` responde `201` con el sitio `connected`; el mismo sitio dos veces en un workspace se rechaza.
+- [ ] Las URL que resuelven a direcciones privadas, de loopback o de metadatos se rechazan **sin** hacerles ninguna petición.
+- [ ] Credenciales rechazadas (401), REST API ausente, Application Passwords no disponibles o usuario sin `publish_posts` devuelven `422` con un mensaje claro y no guardan nada.
+- [ ] Un usuario con rol Administrador o Editor en WordPress genera un aviso no bloqueante.
+- [ ] Un editor recibe `403`; un usuario de otro workspace, `404`.
 - [ ] La contraseña no aparece en respuestas, props de Inertia ni logs.
 
-**Pruebas.**
-
-- *Unitarias:* `UrlGuard` (tabla de IP y dominios, IPv6, redirección a una IP privada, `http` en producción) y mapeo de errores de `Wordpress::Client`, con WebMock.
-- *Servicio:* `Sites::Connect`, con respuestas de WordPress simuladas para cada fila de la tabla de errores.
-- *Peticiones:* specs rswag de `POST /workspaces/{workspace_id}/sites` para `201`, `403`, `404` y `422`, que generan su OpenAPI.
-- *Políticas:* matriz de `SitePolicy`.
-- *Integración:* contra el WordPress local de `compose.yaml`, con el usuario Autor de las semillas.
+**Pruebas.** Unitarias de `UrlGuard` y del mapeo de errores de `Wordpress::Client` (WebMock); specs rswag del endpoint; integración contra el WordPress local.
 
 **Ticket 3**
 
 **FE-01 · Página de temas por sitio (React + Inertia)**
 
-| Tipo | Prioridad | Estimación | Historias | Depende de |
+| Tipo | Cambio | Historias | Estimación | Depende de |
 |---|---|---|---|---|
-| Frontend | Must | 5 | HU-03 | DB-01; endpoints de investigación y decisión (backend) |
+| Frontend | [`add-topic-decisions`](openspec/changes/add-topic-decisions/proposal.md) | HU-03 | 5 | `add-topic-research` |
 
-**Objetivo.** Construir la página donde el equipo lanza investigaciones de temas para un sitio, ve las propuestas con sus fuentes y puntuaciones, y las aprueba o rechaza, con el progreso visible y respetando los permisos por rol.
+**Objetivo.** Página donde el equipo lanza investigaciones de temas para un sitio, ve cada propuesta con sus fuentes y puntuación, y la aprueba o rechaza, con el progreso visible y respetando los permisos por rol.
 
-**Ruta y datos.** `GET /sites/:site_id/topics` → `TopicsController#index` renderiza `pages/Topics/Index.tsx`. Ejemplo de props:
+**Criterios de aceptación principales.**
 
-```json
-{
-  "site": { "id": 42, "name": "Recetas en Familia", "locale": "es", "autopilot_mode": "review" },
-  "filter": "suggested",
-  "counts": { "suggested": 7, "approved": 12, "rejected": 5 },
-  "topics": [
-    {
-      "id": 314,
-      "title": "Batch cooking para la vuelta al cole: menú de 5 días",
-      "angle": "Plan semanal con lista de la compra descargable",
-      "rationale": "Pico de búsquedas y artículos recientes sobre organización de comidas en septiembre",
-      "trend_score": 0.82,
-      "similarity_to_existing": 0.41,
-      "possible_duplicate": false,
-      "origin": "manual",
-      "sources": [{ "url": "https://ejemplo.com/articulo", "title": "Menús para la vuelta al cole", "published_at": "2026-09-20" }]
-    }
-  ],
-  "active_run": { "id": 950, "kind": "research", "status": "running" },
-  "permissions": { "can_research": true, "can_decide": true }
-}
-```
+- [ ] Pestañas Sugeridos, Aprobados y Rechazados con contadores correctos.
+- [ ] "Buscar temas" muestra el progreso sin recargar y queda deshabilitado mientras hay una investigación en curso, también tras recargar.
+- [ ] Aprobar y rechazar actualizan la lista sin recargar; un error restaura la tarjeta y muestra el motivo.
+- [ ] Cada tarjeta enlaza sus fuentes y muestra la etiqueta "Posible duplicado" cuando corresponde.
+- [ ] Sin permisos no se muestran las acciones; la página es usable con teclado y a 375 px.
 
-**Componentes.**
-
-- `TopicsLayout`: cabecera con el sitio activo y un selector de sitio.
-- `ResearchButton`: lanza la investigación; queda deshabilitado y muestra el estado mientras hay una ejecución activa.
-- `StatusTabs`: pestañas Sugeridos, Aprobados y Rechazados, con contadores, sincronizadas con `?filter=`.
-- `TopicCard`: título, enfoque, justificación, insignia de puntuación, etiqueta "Posible duplicado", fuentes plegables y acciones.
-- `RejectDialog`: motivo opcional.
-- `EmptyState` y `ErrorBanner`.
-
-**Interacción.**
-
-1. **Buscar temas:**
-   - `router.post('/sites/:id/topic_research')`;
-   - mientras `active_run` esté en `queued` o `running`, `usePoll(2000, { only: ['active_run', 'topics', 'counts'] })`;
-   - al terminar se detiene el polling y se anuncia el resultado.
-2. **Aprobar:**
-   - `router.patch('/topics/:id', { topic: { status: 'approved' } }, { preserveScroll: true, only: ['topics', 'counts'] })`;
-   - la tarjeta sale de la lista de forma optimista y se restaura si hay error;
-   - aparece un aviso "Redactando borrador…" con enlace al post.
-3. **Rechazar:** se abre `RejectDialog` y se envía la misma petición con `status: 'rejected'`.
-4. **Permisos:** sin `can_decide` no se muestran las acciones, y sin `can_research` no aparece el botón. El backend aplica las mismas reglas.
-
-**Accesibilidad y diseño.**
-
-- Navegación completa con teclado y foco gestionado en los diálogos.
-- Progreso anunciado con `aria-live="polite"` y contraste AA.
-- Una columna en móvil y listado más ancho en escritorio.
-- Estados de carga con *skeletons*.
-- Textos en español centralizados en `lib/i18n`.
-
-**Criterios de aceptación.**
-
-- [ ] La página muestra los temas del sitio activo filtrados por pestaña, con contadores correctos.
-- [ ] "Buscar temas" muestra el progreso sin recargar la página y, al terminar, lista las nuevas propuestas ordenadas por puntuación.
-- [ ] Con una investigación en curso, el botón está deshabilitado, también tras recargar la página.
-- [ ] Aprobar y rechazar actualizan la lista y los contadores sin recargar; un error restaura la tarjeta y muestra el motivo.
-- [ ] Cada tarjeta enlaza sus fuentes (se abren en una pestaña nueva con `rel="noopener noreferrer"`) y muestra la etiqueta de posible duplicado cuando corresponde.
-- [ ] Un usuario sin permisos no ve acciones de decisión ni de investigación.
-- [ ] La página es usable con teclado y en un ancho de 375 px.
-
-**Pruebas.**
-
-- *Vitest + React Testing Library:*
-  - renderizado por pestaña;
-  - acciones ocultas sin permisos;
-  - botón deshabilitado con `active_run` activo;
-  - diálogo de rechazo;
-  - restauración ante error.
-- *Playwright:* un editor lanza una investigación (IA simulada), aprueba un tema y ve el aviso de redacción; un segundo usuario sin permisos no ve las acciones.
+**Pruebas.** Vitest + React Testing Library (pestañas, permisos, estados de carga y error); Playwright para el flujo de aprobación.
 
 ---
 
