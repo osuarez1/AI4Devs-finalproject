@@ -1,0 +1,516 @@
+openapi: 3.0.3
+info:
+  title: WP AutoPilot AI API
+  version: 0.1.0
+  description: |
+    Endpoints principales de WP AutoPilot AI. Las rutas que usa la interfaz (Inertia)
+    devuelven JSON cuando la petición incluye `Accept: application/json`.
+    Autenticación mediante la cookie de sesión y el token CSRF de Rails.
+servers:
+  - url: http://localhost:3000
+    description: Desarrollo local
+security:
+  - sessionCookie: []
+    csrfToken: []
+tags:
+  - name: Sitios
+  - name: Temas
+  - name: Publicación
+paths:
+  /workspaces/{workspace_id}/sites:
+    post:
+      tags: [Sitios]
+      operationId: createSite
+      summary: Conectar un sitio WordPress al workspace
+      description: |
+        Valida la URL (protección SSRF), comprueba que el sitio expone la REST API y admite
+        Application Passwords, verifica las credenciales con
+        `GET /wp-json/wp/v2/users/me?context=edit`, guarda la contraseña cifrada y encola la
+        ingesta de los últimos 50 posts publicados. Requiere rol `admin` en el workspace.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteCreateRequest'
+            example:
+              site:
+                name: Recetas en Familia
+                base_url: https://recetasenfamilia.example
+                wp_username: autopilot
+                wp_app_password: abcd efgh ijkl mnop qrst uvwx
+                locale: es
+                timezone: Europe/Madrid
+                niche: Cocina mediterránea sencilla para familias con poco tiempo
+                seed_keywords: [batch cooking, recetas rápidas, dieta mediterránea]
+      responses:
+        '201':
+          description: Sitio conectado; ingesta encolada.
+          headers:
+            Location:
+              description: URL del sitio creado.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteCreateResponse'
+              example:
+                site:
+                  id: 42
+                  name: Recetas en Familia
+                  base_url: https://recetasenfamilia.example
+                  connection_status: connected
+                  wp_user_role: author
+                  warnings: []
+                  locale: es
+                  timezone: Europe/Madrid
+                  autopilot_mode: 'off'
+                  created_at: '2026-09-25T18:30:00Z'
+                ingestion_run:
+                  id: 901
+                  kind: ingestion
+                  status: queued
+                  created_at: '2026-09-25T18:30:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /topics/{topic_id}:
+    patch:
+      tags: [Temas]
+      operationId: decideTopic
+      summary: Aprobar o rechazar un tema propuesto
+      description: |
+        Registra la decisión humana sobre un tema en estado `suggested`. Al aprobarlo se encola
+        la redacción del borrador con el tono del sitio (ejecución `drafting`). Un tema rechazado
+        no vuelve a proponerse. Requiere rol `admin` o `editor` en el workspace del sitio.
+      parameters:
+        - $ref: '#/components/parameters/TopicId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicDecisionRequest'
+            examples:
+              aprobar:
+                value:
+                  topic:
+                    status: approved
+              rechazar:
+                value:
+                  topic:
+                    status: rejected
+                    rejection_reason: Ya lo tratamos en junio
+      responses:
+        '200':
+          description: Decisión registrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicDecisionResponse'
+              example:
+                topic:
+                  id: 314
+                  site_id: 42
+                  title: 'Batch cooking para la vuelta al cole: menú de 5 días'
+                  status: approved
+                  trend_score: 0.82
+                  similarity_to_existing: 0.41
+                  decided_at: '2026-09-25T18:45:00Z'
+                drafting_run:
+                  id: 902
+                  kind: drafting
+                  status: queued
+                  created_at: '2026-09-25T18:45:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /posts/{post_id}/publication:
+    post:
+      tags: [Publicación]
+      operationId: publishPost
+      summary: Publicar o programar un post en WordPress
+      description: |
+        Convierte el Markdown en HTML, lo sanea con una lista de etiquetas permitidas y lo envía a
+        la REST API de WordPress. Sin `publish_at` se publica de inmediato; con una fecha futura
+        queda programado y la plataforma lo publica a esa hora. Al terminar, el post pasa a
+        `published` y expone `live_url` (consultable con `GET /runs/{run_id}` o `GET /posts/{post_id}`).
+        Si se envía `lock_version` y no coincide con la versión actual, se devuelve 409.
+        Requiere rol `admin` o `editor`.
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationRequest'
+            examples:
+              ahora:
+                value:
+                  publication:
+                    lock_version: 3
+              programado:
+                value:
+                  publication:
+                    publish_at: '2026-10-05T09:00:00+02:00'
+                    lock_version: 3
+      responses:
+        '202':
+          description: Publicación encolada o programada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationResponse'
+              example:
+                post:
+                  id: 77
+                  site_id: 42
+                  title: 'Batch cooking para la vuelta al cole: menú de 5 días'
+                  status: scheduled
+                  scheduled_for: '2026-10-05T07:00:00Z'
+                  published_at: null
+                  wp_post_id: null
+                  live_url: null
+                  lock_version: 3
+                run:
+                  id: 903
+                  kind: publication
+                  status: queued
+                  created_at: '2026-09-25T19:02:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    TopicId:
+      name: topic_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    PostId:
+      name: post_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    SiteCreateRequest:
+      type: object
+      required: [site]
+      properties:
+        site:
+          type: object
+          required: [name, base_url, wp_username, wp_app_password, locale, timezone, niche]
+          properties:
+            name:
+              type: string
+              maxLength: 100
+            base_url:
+              type: string
+              format: uri
+              description: URL raíz del sitio. HTTPS obligatorio en producción.
+            wp_username:
+              type: string
+            wp_app_password:
+              type: string
+              format: password
+              writeOnly: true
+              description: Application Password de WordPress (24 caracteres; se ignoran los espacios).
+            locale:
+              type: string
+              example: es
+            timezone:
+              type: string
+              example: Europe/Madrid
+              description: Zona horaria IANA.
+            niche:
+              type: string
+              maxLength: 1000
+            seed_keywords:
+              type: array
+              maxItems: 20
+              items:
+                type: string
+
+    Site:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        base_url:
+          type: string
+          format: uri
+        connection_status:
+          type: string
+          enum: [pending, connected, error]
+        wp_user_role:
+          type: string
+          description: Rol del usuario de WordPress conectado.
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Avisos no bloqueantes (p. ej., usuario con más privilegios de los necesarios).
+        locale:
+          type: string
+        timezone:
+          type: string
+        autopilot_mode:
+          type: string
+          enum: ['off', review, auto]
+        created_at:
+          type: string
+          format: date-time
+
+    Topic:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        site_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        status:
+          type: string
+          enum: [suggested, approved, rejected, drafted]
+        trend_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        similarity_to_existing:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        site_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        status:
+          type: string
+          enum: [generating, pending_review, scheduled, publishing, published, failed, discarded]
+        scheduled_for:
+          type: string
+          format: date-time
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        wp_post_id:
+          type: integer
+          format: int64
+          nullable: true
+        live_url:
+          type: string
+          format: uri
+          nullable: true
+        lock_version:
+          type: integer
+
+    Run:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        kind:
+          type: string
+          enum: [ingestion, research, drafting, publication, autopilot]
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, skipped]
+        created_at:
+          type: string
+          format: date-time
+
+    SiteCreateResponse:
+      type: object
+      properties:
+        site:
+          $ref: '#/components/schemas/Site'
+        ingestion_run:
+          $ref: '#/components/schemas/Run'
+
+    TopicDecisionRequest:
+      type: object
+      required: [topic]
+      properties:
+        topic:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [approved, rejected]
+            rejection_reason:
+              type: string
+              maxLength: 500
+
+    TopicDecisionResponse:
+      type: object
+      properties:
+        topic:
+          $ref: '#/components/schemas/Topic'
+        drafting_run:
+          description: Ejecución de redacción; null si el tema se rechazó.
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Run'
+
+    PublicationRequest:
+      type: object
+      properties:
+        publication:
+          type: object
+          properties:
+            publish_at:
+              type: string
+              format: date-time
+              nullable: true
+              description: Fecha futura con zona horaria. Si se omite, se publica de inmediato.
+            lock_version:
+              type: integer
+              description: Versión del borrador revisada por el usuario.
+
+    PublicationResponse:
+      type: object
+      properties:
+        post:
+          $ref: '#/components/schemas/Post'
+        run:
+          $ref: '#/components/schemas/Run'
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    ValidationErrors:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+  responses:
+    Unauthorized:
+      description: Sesión ausente o caducada.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: unauthenticated
+              message: Inicia sesión para continuar
+    Forbidden:
+      description: El rol del usuario no permite esta acción.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: forbidden
+              message: Solo los administradores pueden conectar sitios
+    NotFound:
+      description: El recurso no existe o pertenece a otro workspace.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: El estado actual no permite la operación (tema ya decidido, post no publicable o versión obsoleta).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: stale_version
+              message: Otra persona ha modificado el borrador. Revisa los cambios antes de publicar
+    UnprocessableEntity:
+      description: Datos no válidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrors'
+          example:
+            errors:
+              base_url: [no está permitida porque resuelve a una dirección privada]
+              wp_app_password: [WordPress ha rechazado las credenciales (401)]
