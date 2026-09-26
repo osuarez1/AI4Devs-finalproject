@@ -1,0 +1,46 @@
+schema: spec-driven
+
+context: |
+  Product: WP AutoPilot AI — an AI content copilot for WordPress. It learns each site's
+  voice from its last 50 posts, researches trending topics, drafts posts in that tone (RAG),
+  and publishes or schedules them through the WordPress REST API. Two modes per site:
+  Copilot (human approves topics and drafts) and Autopilot (off / review / auto, with guardrails).
+  A workspace (team) manages multiple WordPress sites; roles are admin and editor.
+
+  Language: all OpenSpec artifacts are written in English. readme.md and prompts.md are the
+  course deliverables and are written in Spanish; they link to these changes and specs.
+
+  Architecture: modular monolith, Rails 8 app in apps/platform (the repo root holds course docs).
+  - UI: React 19 + TypeScript + Tailwind CSS 4 via Inertia.js 2 (inertia_rails, vite_rails).
+    Long-running work shows progress with Inertia partial reloads / usePoll, no separate REST API.
+    Key controllers also answer JSON (Accept: application/json); full spec in docs/api/openapi.yaml.
+  - Auth: Rails 8 authentication generator; invitations via generates_token_for.
+  - Authorization: Pundit; every query scoped to Current.workspace (cross-tenant access returns 404).
+  - Jobs: Solid Queue (recurring tasks, limits_concurrency), single-database configuration.
+  - DB: one PostgreSQL 17 database with pgvector (neighbor gem, HNSW cosine indexes, vector(1536)).
+  - WordPress: Wordpress::Client is the only code that talks to WordPress or reads its credentials
+    (Application Passwords, encrypted with Active Record Encryption; SSRF protection via ssrf_filter).
+  - AI: everything behind the Intelligence facade (ingest, research, draft, evaluate) — the extraction
+    seam for a future FastAPI service. Claude via the official `anthropic` Ruby gem: claude-opus-5 for
+    research/drafting (research uses Claude's server-side web_search tool), claude-haiku-4-5 for
+    classification and quality judging. Embeddings: text-embedding-3-small (1536 dims), one model per install.
+  - Every long operation is recorded in `runs` (status, steps, tokens, cost) for progress, budgets and audit.
+  - Tests: RSpec (+ rswag for request specs/OpenAPI), WebMock/VCR, Vitest + React Testing Library,
+    Playwright end-to-end against a local WordPress container. Deploy: Kamal 2 to a single VPS.
+  - Data model reference: readme.md §3 (tables, constraints, indexes).
+
+  Conventions:
+  - One change = one capability slice = one PR (1–3 days), demoable, owning its own migrations.
+    No horizontal "all tables" or "all UI" changes.
+  - Branches: feature/<trello-card-id>-<change-name>; PRs to the fork's main with green CI.
+  - Change names are kebab-case with a verb prefix (add-, update-, remove-).
+
+rules:
+  proposal:
+    - Include a "Dependencies" section listing prerequisite changes by name.
+    - Include an explicit "Out of scope" list.
+    - Reference the user story IDs (HU-xx) and readme.md sections the change implements.
+  specs:
+    - Requirements use SHALL/MUST; every requirement has at least one WHEN/THEN scenario.
+  tasks:
+    - Group tasks by layer (database, backend, frontend, tests); each task fits in ~2 hours.
